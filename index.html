@@ -3,49 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tính Tiền Phòng - Tiền Án Phòng 38</title>
+    <title>Sổ Chi Tiêu Phòng 38</title>
     <style>
-        body { font-family: sans-serif; background-color: #0d1117; color: white; text-align: center; padding: 20px; }
-        .container { max-width: 400px; margin: auto; background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
-        button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .result { margin-top: 20px; padding: 15px; background: #0d1117; border-left: 5px solid #58a6ff; text-align: left; }
-        h2 { color: #58a6ff; }
+        body { font-family: sans-serif; background-color: #0d1117; color: white; padding: 15px; text-align: center; }
+        .container { max-width: 500px; margin: auto; background: #161b22; padding: 15px; border-radius: 10px; border: 1px solid #30363d; }
+        input, select { width: 90%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        button { width: 95%; padding: 12px; background: #238636; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .history { text-align: left; margin-top: 20px; font-size: 14px; max-height: 200px; overflow-y: auto; background: #0d1117; padding: 10px; border-radius: 5px; }
+        .summary { background: #21262d; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 5px solid #58a6ff; }
+        .item { border-bottom: 1px solid #30363d; padding: 5px 0; display: flex; justify-content: space-between; }
         b { color: #f0883e; }
+        h2 { color: #58a6ff; margin-bottom: 5px; }
     </style>
 </head>
 <body>
-    <h1>TIỀN ÁN PHÒNG 38</h1>
+    <h2>SỔ CHI TIÊU PHÒNG 38</h2>
     <div class="container">
-        <h3>Máy Tính Tiền Phòng</h3>
-        <input type="number" id="totalAmount" placeholder="Tổng hóa đơn (VNĐ)">
-        <input type="number" id="memberCount" placeholder="Số người chia" value="2">
-        <button onclick="calculate()">TÍNH NGAY</button>
-        
-        <div id="resultBox" class="result" style="display:none;">
-            <p>Mỗi người cần đóng:</p>
-            <h2 id="perPerson">0 VNĐ</h2>
-            <hr>
-            <p><b>Thành viên:</b></p>
-            <ul id="memberList">
-                <li>Trần Đức Hội</li>
-                <li>Nguyễn Hậu</li>
-            </ul>
+        <input type="text" id="desc" placeholder="Mua gì? (Ví dụ: Trứng, nước mắm...)">
+        <input type="number" id="money" placeholder="Số tiền (VNĐ)">
+        <select id="payer">
+            <option value="Hội">Trần Đức Hội mua</option>
+            <option value="Hậu">Nguyễn Hậu mua</option>
+        </select>
+        <button onclick="addEntry()">GHI VÀO SỔ</button>
+
+        <div class="summary">
+            <div id="status">Chưa có dữ liệu chi tiêu</div>
+            <h3 id="debtResult" style="color: #ff7b72;"></h3>
         </div>
+
+        <div class="history" id="historyList">
+            <p style="text-align:center; color: #8b949e;">Lịch sử chi tiêu hiện ở đây</p>
+        </div>
+        <button onclick="clearData()" style="background: #da3633; margin-top: 20px; font-size: 12px; padding: 5px;">XÓA HẾT LÀM LẠI</button>
     </div>
 
     <script>
-        function calculate() {
-            const total = document.getElementById('totalAmount').value;
-            const count = document.getElementById('memberCount').value;
-            if (total > 0 && count > 0) {
-                const perPerson = Math.round(total / count);
-                document.getElementById('perPerson').innerText = perPerson.toLocaleString('vi-VN') + " VNĐ";
-                document.getElementById('resultBox').style.display = "block";
-            } else {
-                alert("Vui lòng nhập số tiền hợp lệ!");
+        let data = JSON.parse(localStorage.getItem('room38_data')) || [];
+
+        function updateUI() {
+            const list = document.getElementById('historyList');
+            const status = document.getElementById('status');
+            const debtResult = document.getElementById('debtResult');
+            list.innerHTML = "";
+            
+            let totalHoi = 0;
+            let totalHau = 0;
+
+            data.forEach((item, index) => {
+                if(item.payer === "Hội") totalHoi += item.price;
+                else totalHau += item.price;
+                
+                list.innerHTML += `<div class="item"><span>${item.desc} (<b>${item.payer}</b>)</span> <span>${item.price.toLocaleString()}đ</span></div>`;
+            });
+
+            status.innerHTML = `Hội đã chi: <b>${totalHoi.toLocaleString()}đ</b><br>Hậu đã chi: <b>${totalHau.toLocaleString()}đ</b>`;
+            
+            let diff = (totalHoi - totalHau) / 2;
+            if (diff > 0) debtResult.innerText = `=> Hậu cần đưa Hội: ${Math.abs(diff).toLocaleString()}đ`;
+            else if (diff < 0) debtResult.innerText = `=> Hội cần đưa Hậu: ${Math.abs(diff).toLocaleString()}đ`;
+            else debtResult.innerText = "=> Hai bên huề nhau!";
+
+            localStorage.setItem('room38_data', JSON.stringify(data));
+        }
+
+        function addEntry() {
+            const desc = document.getElementById('desc').value;
+            const money = parseInt(document.getElementById('money').value);
+            const payer = document.getElementById('payer').value;
+
+            if (desc && money > 0) {
+                data.push({ desc, price: money, payer });
+                document.getElementById('desc').value = "";
+                document.getElementById('money').value = "";
+                updateUI();
+            } else { alert("Nhập đủ tên món và số tiền nhé!"); }
+        }
+
+        function clearData() {
+            if(confirm("Xóa hết sổ để tính tháng mới hả ông?")) {
+                data = [];
+                updateUI();
             }
         }
+        updateUI();
     </script>
 </body>
 </html>
