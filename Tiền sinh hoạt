@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sổ Chi Tiêu Nhóm</title>
+    <style>
+        body { font-family: sans-serif; background-color: #0d1117; color: white; padding: 15px; text-align: center; }
+        .container { max-width: 500px; margin: auto; background: #161b22; padding: 15px; border-radius: 10px; border: 1px solid #30363d; }
+        input, select { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: white; font-size: 16px; }
+        button { width: 95%; padding: 12px; background: #238636; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .summary { background: #21262d; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 5px solid #58a6ff; text-align: left; }
+        .history { text-align: left; margin-top: 20px; font-size: 14px; max-height: 250px; overflow-y: auto; background: #0d1117; padding: 10px; border-radius: 5px; border: 1px solid #30363d; }
+        .item { border-bottom: 1px solid #30363d; padding: 8px 0; display: flex; justify-content: space-between; }
+        b { color: #f0883e; }
+        h2 { color: #58a6ff; margin-bottom: 20px; }
+        .debt-list { margin-top: 10px; font-size: 15px; color: #ff7b72; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h2>SỔ CHI TIÊU NHÓM</h2>
+    <div class="container">
+        <input type="text" id="desc" placeholder="Mua món gì?">
+        <input type="number" id="money" placeholder="Số tiền (VNĐ)">
+        <select id="payer">
+            <option value="Hội">Hội mua</option>
+            <option value="La Huệ">La Huệ mua</option>
+            <option value="Phạm Huệ">Phạm Huệ mua</option>
+            <option value="Huy Hoàng">Huy Hoàng mua</option>
+            <option value="Thân Hiển">Thân Hiển mua</option>
+            <option value="Hiếu">Hiếu mua</option>
+            <option value="Huy PG">Huy PG mua</option>
+            <option value="Đình Huy">Đình Huy mua</option>
+            <option value="Đắc Huy">Đắc Huy mua</option>
+        </select>
+        <button onclick="addEntry()">GHI VÀO SỔ</button>
+
+        <div class="summary">
+            <div id="status">Chưa có dữ liệu chi tiêu</div>
+            <div id="debtResult" class="debt-list"></div>
+        </div>
+
+        <div class="history" id="historyList">
+            <p style="text-align:center; color: #8b949e;">Lịch sử chi tiêu hiện ở đây</p>
+        </div>
+        <button onclick="clearData()" style="background: #da3633; margin-top: 20px; font-size: 12px; padding: 5px; width: auto;">XÓA HẾT DỮ LIỆU</button>
+    </div>
+
+    <script>
+        let data = JSON.parse(localStorage.getItem('group_spend_data')) || [];
+        const members = ["Hội", "La Huệ", "Phạm Huệ", "Huy Hoàng", "Thân Hiển", "Hiếu", "Huy PG", "Đình Huy", "Đắc Huy"];
+
+        function updateUI() {
+            const list = document.getElementById('historyList');
+            const status = document.getElementById('status');
+            const debtResult = document.getElementById('debtResult');
+            list.innerHTML = "";
+            
+            let totals = {};
+            members.forEach(m => totals[m] = 0);
+            let grandTotal = 0;
+
+            data.forEach((item) => {
+                totals[item.payer] += item.price;
+                grandTotal += item.price;
+                list.innerHTML += `<div class="item"><span>${item.desc} (<b>${item.payer}</b>)</span> <span>${item.price.toLocaleString()}đ</span></div>`;
+            });
+
+            let avg = grandTotal / members.length;
+            status.innerHTML = `Tổng chi cả nhóm: <b>${grandTotal.toLocaleString()}đ</b><br>Trung bình mỗi người: <b>${Math.round(avg).toLocaleString()}đ</b>`;
+            
+            let debtHTML = "";
+            members.forEach(m => {
+                let diff = totals[m] - avg;
+                if (diff > 0) {
+                    debtHTML += `<div>• ${m}: Nhận lại <b>${Math.round(diff).toLocaleString()}đ</b></div>`;
+                } else if (diff < 0) {
+                    debtHTML += `<div>• ${m}: Cần đóng thêm <b>${Math.round(Math.abs(diff)).toLocaleString()}đ</b></div>`;
+                }
+            });
+            debtResult.innerHTML = grandTotal > 0 ? "<b>Chi tiết đóng/nhận:</b><br>" + debtHTML : "";
+
+            localStorage.setItem('group_spend_data', JSON.stringify(data));
+        }
+
+        function addEntry() {
+            const desc = document.getElementById('desc').value;
+            const money = parseInt(document.getElementById('money').value);
+            const payer = document.getElementById('payer').value;
+
+            if (desc && money > 0) {
+                data.push({ desc, price: money, payer });
+                document.getElementById('desc').value = "";
+                document.getElementById('money').value = "";
+                updateUI();
+            } else { alert("Nhập đủ tên món và số tiền nhé!"); }
+        }
+
+        function clearData() {
+            if(confirm("Xóa sạch sổ chi tiêu để tính lại từ đầu?")) {
+                data = [];
+                updateUI();
+            }
+        }
+        updateUI();
+    </script>
+</body>
+</html>
+                    
