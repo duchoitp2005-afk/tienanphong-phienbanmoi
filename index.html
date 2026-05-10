@@ -3,20 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiền Sinh Hoạt</title>
+    <title>Tính Tiền Phòng - Tiền Án Phòng 38</title>
     <style>
         body { font-family: sans-serif; background-color: #0d1117; color: white; text-align: center; padding: 20px; }
-        .member-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px; min-width: 150px; }
-        h1 { color: #58a6ff; }
+        .container { max-width: 400px; margin: auto; background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .result { margin-top: 20px; padding: 15px; background: #0d1117; border-left: 5px solid #58a6ff; text-align: left; }
+        h2 { color: #58a6ff; }
         b { color: #f0883e; }
     </style>
 </head>
 <body>
-    <h1>DANH SÁCH THÀNH VIÊN</h1>
-    <div class="member-list">
-        <div class="card"><b>Trần Đức Hội</b>Đức Hội</b><br>Trưởng nhóm</div>
-        <div class="card"><b>Nguyễn Hậu</b><br>Nguyễn Hậu</div>
+    <h1>TIỀN ÁN PHÒNG 38</h1>
+    <div class="container">
+        <h3>Máy Tính Tiền Phòng</h3>
+        <input type="number" id="totalAmount" placeholder="Tổng hóa đơn (VNĐ)">
+        <input type="number" id="memberCount" placeholder="Số người chia" value="2">
+        <button onclick="calculate()">TÍNH NGAY</button>
+        
+        <div id="resultBox" class="result" style="display:none;">
+            <p>Mỗi người cần đóng:</p>
+            <h2 id="perPerson">0 VNĐ</h2>
+            <hr>
+            <p><b>Thành viên:</b></p>
+            <ul id="memberList">
+                <li>Trần Đức Hội</li>
+                <li>Nguyễn Hậu</li>
+            </ul>
         </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const total = document.getElementById('totalAmount').value;
+            const count = document.getElementById('memberCount').value;
+            if (total > 0 && count > 0) {
+                const perPerson = Math.round(total / count);
+                document.getElementById('perPerson').innerText = perPerson.toLocaleString('vi-VN') + " VNĐ";
+                document.getElementById('resultBox').style.display = "block";
+            } else {
+                alert("Vui lòng nhập số tiền hợp lệ!");
+            }
+        }
+    </script>
 </body>
 </html>
