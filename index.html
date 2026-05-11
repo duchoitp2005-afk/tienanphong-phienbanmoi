@@ -3,90 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sổ Chi Tiêu Phòng</title>
+    <title>Sổ Chi Tiêu - Đức Hội & Minh Hậu</title>
     <style>
-        body { font-family: sans-serif; background-color: #0d1117; color: white; padding: 15px; text-align: center; }
+        body { font-family: sans-serif; background-color: #0d1117; color: white; padding: 10px; text-align: center; }
         .container { max-width: 500px; margin: auto; background: #161b22; padding: 15px; border-radius: 10px; border: 1px solid #30363d; }
-        input, select { width: 90%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
-        button { width: 95%; padding: 12px; background: #238636; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
-        .history { text-align: left; margin-top: 20px; font-size: 14px; max-height: 200px; overflow-y: auto; background: #0d1117; padding: 10px; border-radius: 5px; }
-        .summary { background: #21262d; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 5px solid #58a6ff; }
-        .item { border-bottom: 1px solid #30363d; padding: 5px 0; display: flex; justify-content: space-between; }
-        b { color: #f0883e; }
-        h2 { color: #58a6ff; margin-bottom: 5px; }
+        input, select { width: 90%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        button { width: 95%; padding: 12px; background: #238636; color: white; border: none; border-radius: 8px; font-weight: bold; margin: 10px 0; cursor: pointer; }
+        .member-select { text-align: left; background: #0d1117; padding: 10px; border-radius: 8px; margin: 10px 0; display: flex; flex-direction: column; }
+        .member-select label { font-size: 14px; margin: 5px 0; display: flex; align-items: center; }
+        .summary { background: #21262d; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 5px solid #58a6ff; text-align: left; }
+        .history { text-align: left; margin-top: 20px; font-size: 13px; max-height: 200px; overflow-y: auto; background: #0d1117; padding: 10px; border-radius: 5px; }
+        .item { border-bottom: 1px solid #30363d; padding: 8px 0; font-size: 12px; }
+        .debt-list { margin-top: 10px; color: #ff7b72; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h2>SỔ CHI TIÊU PHÒNG 38</h2>
+    <h3>SỔ CHI TIÊU: ĐỨC HỘI & MINH HẬU</h3>
     <div class="container">
-        <input type="text" id="desc" placeholder="Mua gì? (Ví dụ: Trứng, nước mắm...)">
+        <input type="text" id="desc" placeholder="Mua món gì?">
         <input type="number" id="money" placeholder="Số tiền (VNĐ)">
-        <select id="payer">
-            <option value="Hội">Trần Đức Hội mua</option>
-            <option value="Hậu">Nguyễn Hậu mua</option>
-        </select>
+        <select id="payer"></select>
+        
+        <p style="font-size: 12px; color: #8b949e; margin-bottom: 5px;">Ai cùng tham gia món này?</p>
+        <div class="member-select" id="checkbox-list"></div>
+        
         <button onclick="addEntry()">GHI VÀO SỔ</button>
 
         <div class="summary">
-            <div id="status">Chưa có dữ liệu chi tiêu</div>
-            <h3 id="debtResult" style="color: #ff7b72;"></h3>
+            <div id="status">Chưa có dữ liệu</div>
+            <div id="debtResult" class="debt-list"></div>
         </div>
 
-        <div class="history" id="historyList">
-            <p style="text-align:center; color: #8b949e;">Lịch sử chi tiêu hiện ở đây</p>
-        </div>
-        <button onclick="clearData()" style="background: #da3633; margin-top: 20px; font-size: 12px; padding: 5px;">XÓA HẾT LÀM LẠI</button>
+        <div class="history" id="historyList"></div>
+        <button onclick="clearData()" style="background: #da3633; width: auto; font-size: 12px;">XÓA DỮ LIỆU</button>
     </div>
 
     <script>
-        let data = JSON.parse(localStorage.getItem('room38_data')) || [];
+        const members = ["Đức Hội", "Minh Hậu"];
+        let data = JSON.parse(localStorage.getItem('group2_smart_data')) || [];
+
+        function init() {
+            const cbList = document.getElementById('checkbox-list');
+            const payerSelect = document.getElementById('payer');
+            payerSelect.innerHTML = members.map(m => `<option value="${m}">${m} chi tiền</option>`).join('');
+            cbList.innerHTML = members.map(m => `<label><input type="checkbox" class="participant" value="${m}" checked> ${m}</label>`).join('');
+            updateUI();
+        }
 
         function updateUI() {
             const list = document.getElementById('historyList');
-            const status = document.getElementById('status');
             const debtResult = document.getElementById('debtResult');
             list.innerHTML = "";
-            
-            let totalHoi = 0;
-            let totalHau = 0;
+            let totals = {}; let shares = {};
+            members.forEach(m => { totals[m] = 0; shares[m] = 0; });
 
-            data.forEach((item, index) => {
-                if(item.payer === "Hội") totalHoi += item.price;
-                else totalHau += item.price;
-                
-                list.innerHTML += `<div class="item"><span>${item.desc} (<b>${item.payer}</b>)</span> <span>${item.price.toLocaleString()}đ</span></div>`;
+            data.forEach((item) => {
+                totals[item.payer] += item.price;
+                let perPerson = item.price / item.who.length;
+                item.who.forEach(m => shares[m] += perPerson);
+                list.innerHTML += `<div class="item"><b>${item.payer}</b> chi ${item.price.toLocaleString()}đ cho: ${item.who.join(', ')}</div>`;
             });
 
-            status.innerHTML = `Hội đã chi: <b>${totalHoi.toLocaleString()}đ</b><br>Hậu đã chi: <b>${totalHau.toLocaleString()}đ</b>`;
-            
-            let diff = (totalHoi - totalHau) / 2;
-            if (diff > 0) debtResult.innerText = `=> Hậu cần đưa Hội: ${Math.abs(diff).toLocaleString()}đ`;
-            else if (diff < 0) debtResult.innerText = `=> Hội cần đưa Hậu: ${Math.abs(diff).toLocaleString()}đ`;
-            else debtResult.innerText = "=> Hai bên huề nhau!";
-
-            localStorage.setItem('room38_data', JSON.stringify(data));
+            let debtHTML = "<b>Tổng kết:</b><br>";
+            members.forEach(m => {
+                let diff = totals[m] - shares[m];
+                if (diff > 0) debtHTML += `<div>• ${m}: Nhận lại <b>${Math.round(diff).toLocaleString()}đ</b></div>`;
+                else if (diff < 0) debtHTML += `<div>• ${m}: Đóng thêm <b>${Math.round(Math.abs(diff)).toLocaleString()}đ</b></div>`;
+            });
+            debtResult.innerHTML = data.length > 0 ? debtHTML : "";
+            localStorage.setItem('group2_smart_data', JSON.stringify(data));
         }
 
         function addEntry() {
             const desc = document.getElementById('desc').value;
             const money = parseInt(document.getElementById('money').value);
             const payer = document.getElementById('payer').value;
+            const selected = Array.from(document.querySelectorAll('.participant:checked')).map(cb => cb.value);
 
-            if (desc && money > 0) {
-                data.push({ desc, price: money, payer });
-                document.getElementById('desc').value = "";
-                document.getElementById('money').value = "";
+            if (desc && money > 0 && selected.length > 0) {
+                data.push({ desc, price: money, payer, who: selected });
+                document.getElementById('desc').value = ""; document.getElementById('money').value = "";
                 updateUI();
-            } else { alert("Nhập đủ tên món và số tiền nhé!"); }
+            } else { alert("Vui lòng nhập đủ thông tin!"); }
         }
 
-        function clearData() {
-            if(confirm("Xóa hết sổ để tính tháng mới hả ông?")) {
-                data = [];
-                updateUI();
-            }
-        }
-        updateUI();
+        function clearData() { if(confirm("Xóa sạch sổ?")) { data = []; updateUI(); } }
+        init();
     </script>
 </body>
 </html>
